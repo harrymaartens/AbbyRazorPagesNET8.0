@@ -3,6 +3,9 @@ using Abby.DataAccess.Repositry;
 using Abby.DataAccess.Repositry.IRepositry;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using System.Globalization;
+using Abby.Utility;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,9 +15,20 @@ builder.Services.AddDbContext<ApplicationDbContext>(options=>options.UseSqlServe
         builder.Configuration.GetConnectionString("DefaultConnection")
     ));
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
+
+builder.Services.AddSingleton<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IFoodTypeRepositry, FoodTypeRepositry>();
+
+// Add globalization
+var cultureInfo = new CultureInfo("nl-NL");
+cultureInfo.NumberFormat.CurrencySymbol = "€";
+CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+CultureInfo.CurrentCulture = cultureInfo;
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -35,5 +49,7 @@ app.UseAuthorization();
 app.MapRazorPages();
 
 app.MapControllers();
+
+app.UseRequestLocalization("nl-NL");
 
 app.Run();
